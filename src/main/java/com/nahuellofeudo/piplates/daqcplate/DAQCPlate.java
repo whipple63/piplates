@@ -10,10 +10,8 @@ import com.nahuellofeudo.piplates.PiPlateException;
  */
 public class DAQCPlate extends PiPlate {
 
-
     // The VCC Calibration value for ADC
     int vccValue;
-
 
     /**
      * Constructor
@@ -125,7 +123,7 @@ public class DAQCPlate extends PiPlate {
     /* --------- Utility functions for peripherals --------- */
     /**
      * Reads a temperature from a temperature measurement from a DS18B20 connected to a particular Digital Input channel
-     * @param channel the channel to which the DS18B20 is connected
+     * @param channel the channel to which the DS18B20 is connected, in the range [0..7]
      * @param unit the temperature unit to use (Fahrenheit, Celsius or Kelvin)
      * @return the value of temperature, in the selected unit, as read by a DS18B20
      * @throws InvalidParameterException
@@ -160,7 +158,7 @@ public class DAQCPlate extends PiPlate {
 
     /**
      * Reads range information from a HC-SR04 ultrasonic range finder connected to a digital input channel
-     * @param channel the channel to which the HC-SR04 is connected
+     * @param channel the channel to which the HC-SR04 is connected, in the range [0..6]
      * @param unit the unit of distance to use when returning the range (Centimeters or Inches)
      * @return the range as measured by the HC-SR04 sensor, in the requested units.
      * @throws PiPlateException

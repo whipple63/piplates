@@ -1,7 +1,7 @@
 package com.nahuellofeudo.piplates;
 
 /**
- * The LED selected
+ * One of the method's parameters is invalid
  * Created by nahuellofeudo on 8/31/16.
  */
 public class InvalidParameterException extends PiPlateException {

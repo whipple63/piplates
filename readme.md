@@ -37,7 +37,7 @@ The library is published as a Maven dependency on Maven Central. Just include th
     <dependency>
         <groupId>com.nahuellofeudo</groupId>
         <artifactId>piplates</artifactId>
-        <version>0.1-SNAPSHOT</version>
+        <version>0.1.1</version>
     </dependency>
 
 ### Known bugs and limitations

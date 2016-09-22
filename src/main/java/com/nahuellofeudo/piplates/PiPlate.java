@@ -31,6 +31,9 @@ public abstract class PiPlate {
          log.debug("Initializing Pi4J-Core");
     }
 
+    /**
+     * Configures the GPIO pins for Frame and Interrupt, and initializes the SPI bus
+     */
     private static synchronized void allocateGPIO() {
 
         // Set up port pins
@@ -104,6 +107,12 @@ public abstract class PiPlate {
         return ppCommand(command, parameter1, parameter2, bytesToReturn, 1);
     }
 
+    /**
+     * Transfers data to and/or from a Pi-Plate, one byte at a time, toggling Chip Select between bytes
+     * @param channel channel number (normally 1)
+     * @param data the data to send, or the buffer where to put the data received
+     * @param length number of bytes to send/receive
+     */
     private void transferData(int channel, byte [] data, int length) {
         byte [] dummy = new byte[1];
         for(int x = 0; x < length; x++) {
@@ -114,7 +123,6 @@ public abstract class PiPlate {
         }
     }
 
-    /* --- DAQPlate commands */
 
     /* --------- System commands --------- */
     /**
@@ -150,20 +158,33 @@ public abstract class PiPlate {
         return whole + (point/10.0);
     }
 
+    /**
+     * Java does not support unsigned values. Bytes in the range 0..255 are interpreted as signed bytes in the range (-128..127).
+     * This method converts an byte (0..255) into a Java int with the unsigned value represented by val (0..255)
+     * This is necessary so that math with values > 127 does not fail
+     * @param val the value to convert to unsigned.
+     * @return a 32-bit int with the unsigned value of val
+     */
     public int unsigned(byte val) {
         return (val & 0xFF);
     }
 
     /**
-     * Small delay between the time where FRAME is asserted and when the software starts transmitting commands
+     * Pauses the current thread
+     * @param milliseconds number of milliseconds to pause
      */
     private void delay(int milliseconds) {
         try {Thread.sleep(milliseconds);} catch (InterruptedException e) {}
     }
+
+    /**
+     * One millisecond pause
+     */
     private void delay() { delay (1); }
 
     /**
      * Define the plate's base address
+     * Implemented by plate-specific classes
      */
     protected abstract int getBaseAddr();
 }
