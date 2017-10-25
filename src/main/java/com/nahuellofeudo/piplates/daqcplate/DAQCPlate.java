@@ -11,7 +11,7 @@ import com.nahuellofeudo.piplates.PiPlateException;
 public class DAQCPlate extends PiPlate {
 
     // The VCC Calibration value for ADC
-    int vccValue;
+    double vccValue;
 
     /**
      * Constructor
@@ -37,7 +37,35 @@ public class DAQCPlate extends PiPlate {
         return 8;
     }
 
+    /* --------- System functions --------- */
 
+    /**
+     * Reads and returns the board's identifier string
+     * @return a string ID read from the board
+     */
+    public String getId() {
+        int ID_LENGTH = 20;
+        byte [] resp = ppCommand(0x01, 0, 0, ID_LENGTH);
+        int length = ID_LENGTH;
+        for (int x = 0; x < ID_LENGTH; x++) {
+            if (resp[0] == 0) {
+                length = x;
+                break;
+            }
+        }
+        return new String(resp, 0, length);
+    }
+
+    /**
+     * Ping the PiPlate
+     * @return addr - base_addr if the plate is there, 0 otherwise;
+     */
+    public byte getAddr() {
+        byte [] response = ppCommand(0x00, 0, 0, 1);
+        return (byte) (response[0] - getBaseAddr());
+    }
+
+    
     /* --------- Interrupt Control Functions --------- */
     /**
      * Enable triggering an interrupt when an ENABLED event occurs
@@ -72,7 +100,7 @@ public class DAQCPlate extends PiPlate {
      * @throws InvalidParameterException
      */
     public boolean getDINBit(int bit) throws InvalidParameterException {
-        validateDINBit(bit);
+        validateBitNum(bit);
         byte [] resp=ppCommand(0x20, bit, 0, 1);
         return (resp[0] > 0);
     }
@@ -94,7 +122,7 @@ public class DAQCPlate extends PiPlate {
      * @throws InvalidParameterException
      */
     public void enableDINInterrupt(int bit, InterruptEdge edge) throws InvalidParameterException {
-        validateDINBit(bit);
+        validateBitNum(bit);
         switch (edge) {
             case FALLING_EDGE:
                 ppCommand(0x21, bit, 0, 0);
@@ -115,7 +143,7 @@ public class DAQCPlate extends PiPlate {
      * @throws InvalidParameterException
      */
     public void disableDINInterrupt(int bit) throws InvalidParameterException {
-        validateDINBit(bit);
+        validateBitNum(bit);
         ppCommand(0x24, bit, 0, 0);
     }
 
@@ -193,11 +221,13 @@ public class DAQCPlate extends PiPlate {
      * @throws InvalidParameterException
      * @throws InvalidAddressException
      */
-    public int getADC(int channel) throws InvalidParameterException {
+    public double getADC(int channel) throws InvalidParameterException {
         validateAnalogIn(channel);
-        byte [] resp = ppCommand(0x30, channel, 0, 2, 100);
-        int value = (256 * unsigned(resp[0]) + unsigned(resp[1]));
-        value *= 4;
+        
+//        byte [] resp = ppCommand(0x30, channel, 0, 2, 100);
+        byte [] resp = ppCommand(0x30, channel, 0, 2, 1);
+        double value = (256 * unsigned(resp[0]) + unsigned(resp[1]));
+        value = value*4.096/1024.0;
         if (channel == 8) {
             value = value * 2;
         }
@@ -209,12 +239,12 @@ public class DAQCPlate extends PiPlate {
      * Reads the values of all 8 analog inputs
      * @return an array of 8 ints containing the analog values
      */
-    public int[] getADCAll() {
-        int [] values = new int [8];
+    public double[] getADCAll() {
+        double [] values = new double [8];
         byte[] resp = ppCommand(0x31, 0, 0, 16, 300);
         for (int i = 0; i < 8; i++) {
             values[i] = (256 * unsigned(resp[2 * i]) + unsigned(resp[(2 * i) + 1]));
-            values[i] *= 4;
+            values[i] *= 4.096/1024.0;
         }
         return values;
     }
@@ -258,7 +288,7 @@ public class DAQCPlate extends PiPlate {
      */
     public void setDAC(int channel, double value) throws InvalidParameterException {
         if (value < 0 || value > 4.095) throw new InvalidParameterException("ERROR: DAC argument out of range - must be between 0 and 4.095 volts");
-        value = value / (vccValue * 1024);
+        value = value/vccValue * 1024;
         this.setPWM(channel, (int) value);
     }
 
@@ -269,7 +299,7 @@ public class DAQCPlate extends PiPlate {
      * @return the value of the output (0v to 4.095v)
      * @throws InvalidParameterException
      */
-    double getDAC (int channel) throws InvalidParameterException {
+    public double getDAC (int channel) throws InvalidParameterException {
         int value = getPWM(channel);
         return (value * vccValue) / 1023;
     }
@@ -317,9 +347,35 @@ public class DAQCPlate extends PiPlate {
     }
 
 
+    /* --------- Digital Output Functions --------- */
+    public void setDOUTbit(int bit) throws InvalidParameterException {
+        validateBitNum(bit);
+        ppCommand(0x10,bit,0,0);
+    }
+    
+    public void clrDOUTbit(int bit) throws InvalidParameterException {
+        validateBitNum(bit);
+        ppCommand(0x11,bit,0,0);
+    }
+
+    public void toggleDOUTbit(int bit) throws InvalidParameterException {
+        validateBitNum(bit);
+        ppCommand(0x12,bit,0,0);
+    }
+    
+    public void setDOUTall(int databyte) {
+        ppCommand(0x13,databyte,0,0);
+    }
+    
+    public byte getDOUTall() {
+        byte [] resp=ppCommand(0x14, 0, 0, 1);
+        return resp[0];        
+    }
+    
+    
     /* --------- Methods to validate different parameters --------- */
-    private void validateDINBit (int bit) throws InvalidParameterException {
-        if (bit < 0 || bit > 1) throw new InvalidParameterException("Bit number parameter must be in the range [0..7]");
+    private void validateBitNum (int bit) throws InvalidParameterException {
+        if (bit < 0 || bit > 7) throw new InvalidParameterException("Bit number parameter must be in the range [0..7]");
 
     }
 
