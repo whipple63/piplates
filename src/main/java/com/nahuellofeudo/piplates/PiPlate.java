@@ -1,6 +1,7 @@
 package com.nahuellofeudo.piplates;
 
 import com.pi4j.io.gpio.*;
+import com.pi4j.wiringpi.GpioUtil;
 import com.pi4j.wiringpi.Spi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,9 @@ public abstract class PiPlate {
      */
     private static synchronized void allocateGPIO() {
 
+        // Try to enable non-privilidged GPIO access
+        GpioUtil.enableNonPrivilegedAccess();
+        
         // Set up port pins
         GpioController gpio = GpioFactory.getInstance();
 
@@ -52,7 +56,8 @@ public abstract class PiPlate {
         if (descriptor == 0) {
             // Initialize SPI bus
             log.debug("Initializing SPI bus...");
-            descriptor = Spi.wiringPiSPISetupMode(Spi.CHANNEL_1, 500000, Spi.MODE_0);
+//            descriptor = Spi.wiringPiSPISetupMode(Spi.CHANNEL_1, 500000, Spi.MODE_0);
+            descriptor = Spi.wiringPiSPISetupMode(Spi.CHANNEL_1, 50000, Spi.MODE_0);
         }
 
         if (descriptor < 0) {
@@ -113,28 +118,30 @@ public abstract class PiPlate {
      * @param data the data to send, or the buffer where to put the data received
      * @param length number of bytes to send/receive
      */
+//    private void transferDataIn(int channel, byte [] data, int length) {
+//        byte [] dummy = new byte[1];
+//        for(int x = 0; x < length; x++) {
+////            dummy[0] = data[x];
+//            dummy[0] = 0;
+//            Spi.wiringPiSPIDataRW(channel, dummy, 1);
+////            try { Thread.sleep(0,1); } catch (Exception e) {}
+//            data[x] = dummy[0];
+//        }
+//    }
+    
     private void transferData(int channel, byte [] data, int length) {
-        byte [] dummy = new byte[1];
-        for(int x = 0; x < length; x++) {
-            dummy[0] = data[x];
-            Spi.wiringPiSPIDataRW(channel, dummy, 1);
-            try { Thread.sleep(0, 500); } catch (Exception e) {}
-            data[x] = dummy[0];
-        }
+//        byte [] dummy = new byte[1];
+//        for(int x = 0; x < length; x++) {
+//            dummy[0] = data[x];
+            Spi.wiringPiSPIDataRW(channel, data, length);
+//            try { Thread.sleep(0, 500); } catch (Exception e) {}
+//            data[x] = dummy[0];
+//        }
     }
 
 
     /* --------- System commands --------- */
-    /**
-     * Ping the DAQPlate.
-     * @return addr + 8 if the plate is there, 0 otherwise;
-     */
-    public byte getAddr() throws PiPlateException {
-        byte [] response = ppCommand(0x00, 0, 0, 1);
-        return response[0];
-    }
-
-    /**
+        /**
      * Returns the Hardware revision
      * @return Double containing hardware revision of the plate
      */
@@ -187,4 +194,5 @@ public abstract class PiPlate {
      * Implemented by plate-specific classes
      */
     protected abstract int getBaseAddr();
+    public abstract byte getAddr();
 }
