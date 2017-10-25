@@ -31,6 +31,15 @@ public class RELAYPlate extends PiPlate {
         return 24;
     }
 
+    /**
+     * Ping the PiPlate
+     * @return addr - base_addr if the plate is there, 0 otherwise;
+     */
+    public byte getAddr() {
+        byte [] response = ppCommand(0x00, 0, 0, 1);
+        return (byte) (response[0] - getBaseAddr());
+    }
+    
 
     /* --------- Relay functions --------- */
 
